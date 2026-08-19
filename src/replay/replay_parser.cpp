@@ -16,6 +16,10 @@ public:
     size_t pos() const { return i_; }
     bool has(size_t k) const { return !bad_ && (i_ + k <= n_); }
 
+    uint8_t u8() {
+        if (!has(1)) { bad_ = true; return 0; }
+        return p_[i_++];
+    }
     uint32_t u32() {
         if (!has(4)) { bad_ = true; return 0; }
         uint32_t v;
@@ -87,8 +91,7 @@ bool read_property(Reader& r, ReplayMeta& m) {
     else if (type == "FloatProperty"){ float f = r.f32();    std::ostringstream o; o << f; value = o.str(); }
     else if (type == "StrProperty" || type == "NameProperty") { value = r.str(); }
     else if (type == "ByteProperty") { std::string e = r.str(); std::string v = r.str(); value = e + "::" + v; }
-    else if (type == "BoolProperty") { uint8_t b = 0; if (r.has(1)) { b = *(uint8_t*)((const uint8_t*)nullptr); } // fallback
-                                       value = (b ? "true" : "false"); }
+    else if (type == "BoolProperty") { value = r.u8() ? "true" : "false"; }
     else if (type == "QWordProperty"){ uint64_t v = r.u64(); value = std::to_string(v); }
     else if (type == "ArrayProperty"){ uint32_t n = r.u32(); value = "[array n=" + std::to_string(n) + "]"; }
     else                             { value = "<" + type + ">"; }

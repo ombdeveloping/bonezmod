@@ -118,6 +118,11 @@ void Overlay::reposition(const RECT& r) {
     make_target();
 }
 
+void Overlay::set_visible(bool on) {
+    if (!hwnd_) return;
+    ShowWindow(hwnd_, on ? SW_SHOWNOACTIVATE : SW_HIDE);
+}
+
 void Overlay::set_click_through(bool on) {
     if (!hwnd_) return;
     LONG ex = GetWindowLongW(hwnd_, GWL_EXSTYLE);

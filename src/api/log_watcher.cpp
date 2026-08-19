@@ -6,6 +6,7 @@
 #include <fstream>
 #include <regex>
 #include <chrono>
+#include <algorithm>
 
 namespace bonez {
 

@@ -1,7 +1,6 @@
 #include "process_watch.h"
 
 #include <tlhelp32.h>
-#include <dwmapi.h>
 
 namespace bonez {
 

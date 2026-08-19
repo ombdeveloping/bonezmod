@@ -5,6 +5,16 @@
 #include <sstream>
 #include <cctype>
 #include <algorithm>
+#include <windows.h>
+
+static std::wstring u8_to_w(const std::string& s) {
+    if (s.empty()) return {};
+    int n = MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(),
+                                nullptr, 0);
+    std::wstring w(n, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), w.data(), n);
+    return w;
+}
 
 namespace bonez::plugins {
 
@@ -304,7 +314,7 @@ void MmrReveal::draw(Overlay::PaintCtx& c) {
 
         // --- Name (right of badge) --------------------------------------
         float text_x = badge_x + badge_size + 12;
-        std::wstring name(e.handle.begin(), e.handle.end());
+        std::wstring name = u8_to_w(e.handle);
         D2D1_RECT_F nr = D2D1::RectF(text_x, y + 4,
                                       pad_x + w - 100, y + 24);
         c.d2d->DrawTextW(name.c_str(), (UINT32)name.size(),

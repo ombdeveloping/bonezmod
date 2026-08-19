@@ -30,6 +30,8 @@ public:
     void reposition(const RECT& screen_rect);
     void set_paint(PaintFn fn) { paint_ = std::move(fn); }
     void set_click_through(bool on);
+    void set_visible(bool on);
+    HWND hwnd() const { return hwnd_; }
 
     // Pump one frame: process messages, redraw.
     bool pump_and_render();

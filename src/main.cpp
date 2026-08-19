@@ -235,8 +235,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
                         break;
                     case HK_TOGGLE_OVR:
                         settings.overlay_enabled = !settings.overlay_enabled;
-                        ShowWindow(GetActiveWindow(),
-                                   settings.overlay_enabled ? SW_SHOWNA : SW_HIDE);
+                        overlay.set_visible(settings.overlay_enabled);
                         break;
                     case HK_TOGGLE_CT: {
                         bool ct = !settings.click_through;
@@ -250,7 +249,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
                     case HK_WHAT_SAVE:  if (pad_ok) plugins::what_a_save(macros); break;
                     case HK_NICE_SHOT:  if (pad_ok) plugins::nice_shot(macros); break;
                     case HK_REQUEUE:    if (pad_ok) plugins::requeue(macros); break;
-                    case HK_CAM_APPLY:  if (pad_ok) plugins::apply(macros, plugins::kSquishy, true); break;
+                    case HK_CAM_APPLY:  if (pad_ok) plugins::apply(macros, plugins::kSquishy, false); break;
                     case HK_OBS_CLIP:   std::thread([&]{ obs.save_replay_buffer(); }).detach(); break;
                     case HK_TOG_TRAIL:  trail_on = !trail_on; break;
                     case HK_TOG_AUTOQ:  autoq_on = !autoq_on; break;
