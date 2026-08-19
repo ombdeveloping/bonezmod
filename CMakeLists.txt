@@ -66,6 +66,13 @@ add_executable(bonezmod WIN32
     src/plugins/freeplay_reset.cpp
     src/plugins/training_pack.cpp
     src/plugins/shot_mirror.cpp
+    src/plugins/auto_queue.cpp
+    src/plugins/workshop_manager.cpp
+    src/plugins/camera_preset.cpp
+    src/plugins/ball_trail.cpp
+    src/plugins/soundboard.cpp
+    src/plugins/obs_replay.cpp
+    src/plugins/chat.cpp
     src/ui/controlpanel.cpp
 )
 
@@ -74,7 +81,7 @@ target_include_directories(bonezmod PRIVATE src)
 target_link_libraries(bonezmod PRIVATE
     d3d11 dxgi dcomp d2d1 dwrite dwmapi
     user32 gdi32 shell32 ole32 uuid
-    winhttp
+    winhttp winmm bcrypt
     psapi advapi32
 )
 
