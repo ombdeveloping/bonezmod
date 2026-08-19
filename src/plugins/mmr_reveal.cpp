@@ -3,6 +3,8 @@
 #include <wrl/client.h>
 #include <d2d1_1.h>
 #include <sstream>
+#include <cctype>
+#include <algorithm>
 
 namespace bonez::plugins {
 
@@ -38,6 +40,64 @@ int pick_int(const std::string& j, const std::string& key) {
         ++p;
     }
     return sign * n;
+}
+
+// Rank-tier -> accent color. The name in tracker.gg tiers reads
+// "Bronze I", "Silver II Div 3", "Grand Champion I", "Supersonic Legend".
+D2D1::ColorF tier_color(const std::string& tier) {
+    std::string t = tier;
+    std::transform(t.begin(), t.end(), t.begin(),
+                   [](unsigned char c){ return (char)std::tolower(c); });
+    if (t.find("supersonic")     != std::string::npos) return D2D1::ColorF(1.00f, 0.35f, 0.90f); // pink
+    if (t.find("grand champion") != std::string::npos) return D2D1::ColorF(0.75f, 0.45f, 1.00f); // purple
+    if (t.find("champion")       != std::string::npos) return D2D1::ColorF(0.55f, 0.70f, 1.00f); // blue-violet
+    if (t.find("diamond")        != std::string::npos) return D2D1::ColorF(0.35f, 0.85f, 1.00f); // cyan
+    if (t.find("platinum")       != std::string::npos) return D2D1::ColorF(0.55f, 1.00f, 0.85f); // teal
+    if (t.find("gold")           != std::string::npos) return D2D1::ColorF(1.00f, 0.85f, 0.30f); // gold
+    if (t.find("silver")         != std::string::npos) return D2D1::ColorF(0.85f, 0.85f, 0.90f); // silver
+    if (t.find("bronze")         != std::string::npos) return D2D1::ColorF(0.85f, 0.55f, 0.35f); // bronze
+    return D2D1::ColorF(1, 1, 1, 0.75f);
+}
+
+// Compress "Grand Champion II Div 3" -> "GC2 d3" for the inline badge.
+std::wstring short_tier(const std::string& tier) {
+    std::string t = tier;
+    auto lower = t;
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](unsigned char c){ return (char)std::tolower(c); });
+    std::string prefix;
+    if      (lower.find("supersonic")     != std::string::npos) prefix = "SSL";
+    else if (lower.find("grand champion") != std::string::npos) prefix = "GC";
+    else if (lower.find("champion")       != std::string::npos) prefix = "C";
+    else if (lower.find("diamond")        != std::string::npos) prefix = "D";
+    else if (lower.find("platinum")       != std::string::npos) prefix = "P";
+    else if (lower.find("gold")           != std::string::npos) prefix = "G";
+    else if (lower.find("silver")         != std::string::npos) prefix = "S";
+    else if (lower.find("bronze")         != std::string::npos) prefix = "B";
+    else                                                        prefix = tier;
+
+    // Trailing roman numeral.
+    std::string tail;
+    auto pos = lower.find_last_of(" ");
+    while (pos != std::string::npos) {
+        std::string tok = lower.substr(pos + 1);
+        if (tok == "i")   { tail = "1"; break; }
+        if (tok == "ii")  { tail = "2"; break; }
+        if (tok == "iii") { tail = "3"; break; }
+        if (tok == "iv")  { tail = "4"; break; }
+        if (tok == "v")   { tail = "5"; break; }
+        if (pos == 0) break;
+        pos = lower.find_last_of(" ", pos - 1);
+    }
+
+    // Division suffix if present.
+    std::string div;
+    auto dp = lower.find(" div ");
+    if (dp != std::string::npos && dp + 5 < lower.size())
+        div = std::string(" d") + lower[dp + 5];
+
+    std::string out = prefix + tail + div;
+    return std::wstring(out.begin(), out.end());
 }
 
 std::string pick_str(const std::string& j, const std::string& key) {
@@ -190,6 +250,9 @@ void MmrReveal::draw(Overlay::PaintCtx& c) const {
     D2D1_RECT_F hr = D2D1::RectF(pad_x + 12, top + 4, pad_x + w, top + 24);
     c.d2d->DrawTextW(hdr.c_str(), (UINT32)hdr.size(), big.Get(), hr, white.Get());
 
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> tier_brush;
+    c.d2d->CreateSolidColorBrush(D2D1::ColorF(1,1,1,1), tier_brush.GetAddressOf());
+
     for (size_t i = 0; i < snap.size(); ++i) {
         const auto& e = snap[i];
         float y = top + 24 + i * row_h;
@@ -201,28 +264,63 @@ void MmrReveal::draw(Overlay::PaintCtx& c) const {
         c.d2d->FillEllipse(dot, team_brush);
 
         std::wstring name(e.handle.begin(), e.handle.end());
-        std::wstring plat(e.platform.begin(), e.platform.end());
-        std::wstringstream ss;
-        ss << name << L"   [" << plat << L"]";
-        D2D1_RECT_F nr = D2D1::RectF(pad_x + 36, y + 4, pad_x + w - 8, y + 24);
-        c.d2d->DrawTextW(ss.str().c_str(), (UINT32)ss.str().size(),
+
+        // --- Name (left) ------------------------------------------------
+        D2D1_RECT_F nr = D2D1::RectF(pad_x + 36, y + 4, pad_x + 260, y + 24);
+        c.d2d->DrawTextW(name.c_str(), (UINT32)name.size(),
                          big.Get(), nr, white.Get());
 
-        std::wstring line2;
-        if (e.failed) {
-            line2 = L"tracker: no profile";
-        } else if (!e.loaded) {
-            line2 = L"tracker: fetching…";
-        } else {
-            std::wstringstream l2;
-            l2 << std::wstring(e.current_tier.begin(), e.current_tier.end())
-               << L"   mmr " << e.current_mmr
-               << L" (peak " << e.peak_mmr << L")"
-               << L"   " << e.wins << L"w / " << e.games << L"g";
-            line2 = l2.str();
+        // --- Rank badge (right of name, same line) ----------------------
+        if (e.loaded && !e.current_tier.empty()) {
+            std::wstring badge = short_tier(e.current_tier);
+            auto col = tier_color(e.current_tier);
+            tier_brush->SetColor(D2D1::ColorF(col.r, col.g, col.b, 0.22f));
+
+            float bx = pad_x + 260;
+            float by = y + 4;
+            float bw = 78;
+            float bh = 20;
+            D2D1_ROUNDED_RECT pill{ D2D1::RectF(bx, by, bx + bw, by + bh), 6, 6 };
+            c.d2d->FillRoundedRectangle(pill, tier_brush.Get());
+            tier_brush->SetColor(col);
+            D2D1_RECT_F br = D2D1::RectF(bx, by, bx + bw, by + bh);
+            // centered badge text
+            Microsoft::WRL::ComPtr<IDWriteTextFormat> pillfmt;
+            c.dw->CreateTextFormat(L"Segoe UI", nullptr,
+                DWRITE_FONT_WEIGHT_BOLD, DWRITE_FONT_STYLE_NORMAL,
+                DWRITE_FONT_STRETCH_NORMAL, 13, L"en-us", pillfmt.GetAddressOf());
+            pillfmt->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+            pillfmt->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+            c.d2d->DrawTextW(badge.c_str(), (UINT32)badge.size(),
+                             pillfmt.Get(), br, tier_brush.Get());
+
+            // MMR to the right of the badge
+            std::wstringstream mm;
+            mm << L"mmr " << e.current_mmr;
+            D2D1_RECT_F mr = D2D1::RectF(bx + bw + 8, y + 4,
+                                          pad_x + w - 8, y + 24);
+            c.d2d->DrawTextW(mm.str().c_str(), (UINT32)mm.str().size(),
+                             big.Get(), mr, white.Get());
+        } else if (!e.loaded && !e.failed) {
+            D2D1_RECT_F mr = D2D1::RectF(pad_x + 260, y + 4,
+                                          pad_x + w - 8, y + 24);
+            c.d2d->DrawTextW(L"fetching…", 9, big.Get(), mr, dim.Get());
+        } else if (e.failed) {
+            D2D1_RECT_F mr = D2D1::RectF(pad_x + 260, y + 4,
+                                          pad_x + w - 8, y + 24);
+            c.d2d->DrawTextW(L"no profile", 10, big.Get(), mr, dim.Get());
         }
-        D2D1_RECT_F sr = D2D1::RectF(pad_x + 36, y + 22, pad_x + w - 8, y + 42);
-        c.d2d->DrawTextW(line2.c_str(), (UINT32)line2.size(),
+
+        // --- Second line: platform + peak + W/G -------------------------
+        std::wstring plat(e.platform.begin(), e.platform.end());
+        std::wstringstream l2;
+        l2 << L"[" << plat << L"]";
+        if (e.loaded) {
+            l2 << L"   peak " << e.peak_mmr
+               << L"   " << e.wins << L"w / " << e.games << L"g";
+        }
+        D2D1_RECT_F sr = D2D1::RectF(pad_x + 36, y + 24, pad_x + w - 8, y + 42);
+        c.d2d->DrawTextW(l2.str().c_str(), (UINT32)l2.str().size(),
                          small.Get(), sr,
                          e.smurf_flag() ? red.Get() : dim.Get());
     }
