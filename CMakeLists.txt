@@ -68,12 +68,10 @@ add_executable(bonezmod WIN32
     src/plugins/mmr_reveal.cpp
     src/plugins/freeplay_reset.cpp
     src/plugins/training_pack.cpp
-    src/plugins/auto_queue.cpp
     src/plugins/workshop_manager.cpp
     src/plugins/camera_preset.cpp
     src/plugins/ball_trail.cpp
     src/plugins/obs_replay.cpp
-    src/plugins/chat.cpp
     src/ui/controlpanel.cpp
 )
 

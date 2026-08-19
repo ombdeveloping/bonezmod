@@ -111,29 +111,5 @@ std::vector<Step> kickoff_freeplay_reset() {
     return s;
 }
 
-std::vector<Step> quick_chat(int slot, int idx) {
-    // Slot: 1=info, 2=compliments, 3=reactions, 4=apologies
-    // Bound to d-pad direction, followed by direction for the phrase.
-    std::vector<Step> s;
-    PadState dir;
-    switch (slot) {
-        case 1: dir.dpad_up = true; break;
-        case 2: dir.dpad_left = true; break;
-        case 3: dir.dpad_right = true; break;
-        default: dir.dpad_down = true; break;
-    }
-    s.push_back(tap(dir, 70));
-    s.push_back(wait(60));
-    PadState pick;
-    switch (idx) {
-        case 1: pick.dpad_up = true; break;
-        case 2: pick.dpad_left = true; break;
-        case 3: pick.dpad_right = true; break;
-        default: pick.dpad_down = true; break;
-    }
-    s.push_back(tap(pick, 70));
-    return s;
-}
-
 } // namespace macros
 } // namespace bonez

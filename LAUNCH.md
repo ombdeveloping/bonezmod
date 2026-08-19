@@ -36,8 +36,6 @@ against `RocketLeague.exe`. Everything runs in its own process.
 |---|---|
 | `freeplay_reset` | shot reset + full menu-nav back to freeplay |
 | `training_pack` | type pack code (keyboard or virtual OSK), next/prev shot |
-| `auto_queue` | detects "Match Found" ring, taps A to accept; `requeue()` returns to play after a match |
-| `chat` | quick-chat helpers (`auto_gg`, `what_a_save`, `nice_shot`, `sorry`) |
 | `camera_preset` | menu-nav slider driver with `kSquishy` / `kJstn` / `kRizzo` presets |
 | `workshop_manager` | file-swap `.udk` maps into RL's `\CookedPCConsole\mods\` |
 | `ball_trail` | 40-sample fading polyline of recent ball positions |
@@ -64,16 +62,11 @@ All chorded with `Ctrl+Alt` to avoid clashing with in-game binds.
 |---|---|
 | `R` | full exit-to-freeplay macro |
 | `E` | shot reset (training / freeplay) |
-| `U` | requeue after match |
-| `G` | "gg wp" quick chat |
-| `W` | "what a save!" quick chat |
-| `N` | "nice shot!" quick chat |
 | `C` | apply Squishy camera preset |
 | `S` | save OBS replay buffer (obs-websocket) |
 | `T` | show / hide overlay |
 | `M` | toggle click-through |
 | `F1` | toggle ball trail |
-| `F2` | toggle auto-queue |
 | `F3` | toggle MMR reveal card |
 | `Q` | quit bonezmod |
 

@@ -46,7 +46,6 @@ namespace macros {
 
 std::vector<Step> kickoff_freeplay_reset(); // exit-to-freeplay flow
 std::vector<Step> ball_cam_toggle();
-std::vector<Step> quick_chat(int slot /*1..4*/, int idx /*1..4*/);
 std::vector<Step> pause_menu();
 std::vector<Step> shot_reset_training(); // press Backspace-equivalent (Back)
 

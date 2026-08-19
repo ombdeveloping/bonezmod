@@ -23,10 +23,8 @@
 #include "input/vigem_pad.h"
 #include "input/macro.h"
 #include "plugins/freeplay_reset.h"
-#include "plugins/auto_queue.h"
 #include "plugins/ball_trail.h"
 #include "plugins/obs_replay.h"
-#include "plugins/chat.h"
 #include "plugins/camera_preset.h"
 #include "plugins/mmr_reveal.h"
 #include "api/log_watcher.h"
@@ -51,14 +49,9 @@ enum HotkeyId : int {
     HK_TOGGLE_OVR = 3,
     HK_TOGGLE_CT  = 4,
     HK_QUIT       = 5,
-    HK_AUTO_GG    = 6,
-    HK_WHAT_SAVE  = 7,
-    HK_NICE_SHOT  = 8,
-    HK_REQUEUE    = 9,
     HK_CAM_APPLY  = 10,
     HK_OBS_CLIP   = 11,
     HK_TOG_TRAIL  = 15,
-    HK_TOG_AUTOQ  = 16,
     HK_TOG_REVEAL = 17,
 };
 
@@ -68,14 +61,9 @@ void register_hotkeys() {
     RegisterHotKey(nullptr, HK_TOGGLE_OVR, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'T');
     RegisterHotKey(nullptr, HK_TOGGLE_CT,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'M');
     RegisterHotKey(nullptr, HK_QUIT,       MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'Q');
-    RegisterHotKey(nullptr, HK_AUTO_GG,    MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'G');
-    RegisterHotKey(nullptr, HK_WHAT_SAVE,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'W');
-    RegisterHotKey(nullptr, HK_NICE_SHOT,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'N');
-    RegisterHotKey(nullptr, HK_REQUEUE,    MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'U');
     RegisterHotKey(nullptr, HK_CAM_APPLY,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'C');
     RegisterHotKey(nullptr, HK_OBS_CLIP,   MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'S');
     RegisterHotKey(nullptr, HK_TOG_TRAIL,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F1);
-    RegisterHotKey(nullptr, HK_TOG_AUTOQ,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F2);
     RegisterHotKey(nullptr, HK_TOG_REVEAL, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F3);
 }
 
@@ -104,7 +92,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     bool pad_connected = pad.connect();
     MacroPlayer macros(pad);
 
-    plugins::AutoQueue        auto_queue;
     plugins::BallTrail        ball_trail;
     plugins::ObsReplay        obs;
     obs.configure(L"127.0.0.1", 4455, "");
@@ -133,7 +120,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     mmr.attach(log_watch);
     std::atomic<bool> reveal_on { true };
     std::atomic<bool> trail_on { true };
-    std::atomic<bool> autoq_on { true };
 
     Overlay overlay;
     DxgiCapture capture;
@@ -213,9 +199,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
                     }
                     if (feats.boost) hud.boost = feats.boost->value;
                     if (trail_on) ball_trail.push(feats);
-                    if (autoq_on && pad_connected && settings.vpad_arm
-                                 && !hud.eac_warning)
-                        auto_queue.tick(frame, last_game_rect, macros);
                 }
             }
         }
@@ -245,14 +228,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
                     }
                     case HK_QUIT:
                         goto done;
-                    case HK_AUTO_GG:    if (pad_ok) plugins::auto_gg(macros); break;
-                    case HK_WHAT_SAVE:  if (pad_ok) plugins::what_a_save(macros); break;
-                    case HK_NICE_SHOT:  if (pad_ok) plugins::nice_shot(macros); break;
-                    case HK_REQUEUE:    if (pad_ok) plugins::requeue(macros); break;
                     case HK_CAM_APPLY:  if (pad_ok) plugins::apply(macros, plugins::kSquishy, false); break;
                     case HK_OBS_CLIP:   std::thread([&]{ obs.save_replay_buffer(); }).detach(); break;
                     case HK_TOG_TRAIL:  trail_on = !trail_on; break;
-                    case HK_TOG_AUTOQ:  autoq_on = !autoq_on; break;
                     case HK_TOG_REVEAL: reveal_on = !reveal_on; break;
                 }
             } else if (msg.message == WM_QUIT) {
@@ -274,14 +252,9 @@ done:
     UnregisterHotKey(nullptr, HK_TOGGLE_OVR);
     UnregisterHotKey(nullptr, HK_TOGGLE_CT);
     UnregisterHotKey(nullptr, HK_QUIT);
-    UnregisterHotKey(nullptr, HK_AUTO_GG);
-    UnregisterHotKey(nullptr, HK_WHAT_SAVE);
-    UnregisterHotKey(nullptr, HK_NICE_SHOT);
-    UnregisterHotKey(nullptr, HK_REQUEUE);
     UnregisterHotKey(nullptr, HK_CAM_APPLY);
     UnregisterHotKey(nullptr, HK_OBS_CLIP);
     UnregisterHotKey(nullptr, HK_TOG_TRAIL);
-    UnregisterHotKey(nullptr, HK_TOG_AUTOQ);
     UnregisterHotKey(nullptr, HK_TOG_REVEAL);
     log_watch.stop();
 
