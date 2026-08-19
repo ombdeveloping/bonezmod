@@ -29,6 +29,12 @@ public:
               const D2D1_RECT_F&  dst);
 
 private:
+    void draw_procedural(ID2D1DeviceContext* d2d,
+                         IDWriteFactory*     dw,
+                         const std::string&  family,
+                         const std::string&  full_tier,
+                         const D2D1_RECT_F&  dst);
+
     Microsoft::WRL::ComPtr<IWICImagingFactory> wic_;
     std::unordered_map<std::string,
         Microsoft::WRL::ComPtr<ID2D1Bitmap>> cache_;

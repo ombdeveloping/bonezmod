@@ -23,10 +23,8 @@
 #include "input/vigem_pad.h"
 #include "input/macro.h"
 #include "plugins/freeplay_reset.h"
-#include "plugins/shot_mirror.h"
 #include "plugins/auto_queue.h"
 #include "plugins/ball_trail.h"
-#include "plugins/soundboard.h"
 #include "plugins/obs_replay.h"
 #include "plugins/chat.h"
 #include "plugins/camera_preset.h"
@@ -59,9 +57,6 @@ enum HotkeyId : int {
     HK_REQUEUE    = 9,
     HK_CAM_APPLY  = 10,
     HK_OBS_CLIP   = 11,
-    HK_SND_1      = 12,
-    HK_SND_2      = 13,
-    HK_SND_3      = 14,
     HK_TOG_TRAIL  = 15,
     HK_TOG_AUTOQ  = 16,
     HK_TOG_REVEAL = 17,
@@ -79,9 +74,6 @@ void register_hotkeys() {
     RegisterHotKey(nullptr, HK_REQUEUE,    MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'U');
     RegisterHotKey(nullptr, HK_CAM_APPLY,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'C');
     RegisterHotKey(nullptr, HK_OBS_CLIP,   MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'S');
-    RegisterHotKey(nullptr, HK_SND_1,      MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, '1');
-    RegisterHotKey(nullptr, HK_SND_2,      MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, '2');
-    RegisterHotKey(nullptr, HK_SND_3,      MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, '3');
     RegisterHotKey(nullptr, HK_TOG_TRAIL,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F1);
     RegisterHotKey(nullptr, HK_TOG_AUTOQ,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F2);
     RegisterHotKey(nullptr, HK_TOG_REVEAL, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F3);
@@ -114,7 +106,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
 
     plugins::AutoQueue        auto_queue;
     plugins::BallTrail        ball_trail;
-    plugins::Soundboard       soundboard;
     plugins::ObsReplay        obs;
     obs.configure(L"127.0.0.1", 4455, "");
     LogWatcher                log_watch;
@@ -157,16 +148,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
         paint_hud(c, hud);
         if (trail_on) ball_trail.draw(c, last_game_rect);
         if (reveal_on) mmr.draw(c);
-        // Mirror marker.
-        auto mirror = plugins::mirror_ball(feats, last_game_rect);
-        if (mirror.valid) {
-            Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> br;
-            c.d2d->CreateSolidColorBrush(D2D1::ColorF(0.4f, 0.8f, 1.0f, 0.85f),
-                                         br.GetAddressOf());
-            D2D1_ELLIPSE e{ D2D1::Point2F(mirror.x - last_game_rect.left,
-                                          mirror.y - last_game_rect.top), 10, 10 };
-            c.d2d->DrawEllipse(e, br.Get(), 2.0f);
-        }
     });
 
     for (;;) {
@@ -262,9 +243,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
                     case HK_REQUEUE:    if (pad_ok) plugins::requeue(macros); break;
                     case HK_CAM_APPLY:  if (pad_ok) plugins::apply(macros, plugins::kSquishy, true); break;
                     case HK_OBS_CLIP:   std::thread([&]{ obs.save_replay_buffer(); }).detach(); break;
-                    case HK_SND_1:      soundboard.play(1); break;
-                    case HK_SND_2:      soundboard.play(2); break;
-                    case HK_SND_3:      soundboard.play(3); break;
                     case HK_TOG_TRAIL:  trail_on = !trail_on; break;
                     case HK_TOG_AUTOQ:  autoq_on = !autoq_on; break;
                     case HK_TOG_REVEAL: reveal_on = !reveal_on; break;
@@ -294,9 +272,6 @@ done:
     UnregisterHotKey(nullptr, HK_REQUEUE);
     UnregisterHotKey(nullptr, HK_CAM_APPLY);
     UnregisterHotKey(nullptr, HK_OBS_CLIP);
-    UnregisterHotKey(nullptr, HK_SND_1);
-    UnregisterHotKey(nullptr, HK_SND_2);
-    UnregisterHotKey(nullptr, HK_SND_3);
     UnregisterHotKey(nullptr, HK_TOG_TRAIL);
     UnregisterHotKey(nullptr, HK_TOG_AUTOQ);
     UnregisterHotKey(nullptr, HK_TOG_REVEAL);
