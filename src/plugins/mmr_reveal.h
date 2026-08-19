@@ -2,6 +2,7 @@
 #include "api/log_watcher.h"
 #include "api/tracker_api.h"
 #include "overlay/overlay.h"
+#include "overlay/rank_badge.h"
 
 #include <mutex>
 #include <unordered_map>
@@ -20,6 +21,7 @@ struct RevealEntry {
     // Filled by the tracker fetch:
     std::string current_tier;    // e.g. "Diamond II Div 3"
     int         current_mmr = 0;
+    int         current_division = 0;  // 1..4, 0 = unknown
     int         peak_mmr = 0;
     int         wins = 0;
     int         games = 0;
@@ -42,8 +44,10 @@ public:
 
     // Attach to a running LogWatcher.
     void attach(LogWatcher& lw);
+    // Optional: point the badge loader at a folder of PNG icons.
+    void set_badge_dir(const std::wstring& dir) { badges_.configure(dir); }
     // Draw the current reveal card on the overlay.
-    void draw(Overlay::PaintCtx& c) const;
+    void draw(Overlay::PaintCtx& c);
 
 private:
     void on_snapshot(const MatchSnapshot& s);
@@ -62,6 +66,7 @@ private:
 
     // cache to avoid re-fetching the same handle within a session
     std::unordered_map<std::string, RevealEntry> cache_;
+    mutable RankBadge badges_;
 };
 
 } // namespace bonez::plugins

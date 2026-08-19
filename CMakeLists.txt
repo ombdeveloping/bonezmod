@@ -59,6 +59,7 @@ add_executable(bonezmod WIN32
     src/capture/dxgi_capture.cpp
     src/vision/detector.cpp
     src/overlay/overlay.cpp
+    src/overlay/rank_badge.cpp
     src/input/vigem_pad.cpp
     src/input/macro.cpp
     src/replay/replay_parser.cpp
@@ -83,7 +84,7 @@ target_include_directories(bonezmod PRIVATE src)
 target_link_libraries(bonezmod PRIVATE
     d3d11 dxgi dcomp d2d1 dwrite dwmapi
     user32 gdi32 shell32 ole32 uuid
-    winhttp winmm bcrypt
+    winhttp winmm bcrypt windowscodecs
     psapi advapi32
 )
 

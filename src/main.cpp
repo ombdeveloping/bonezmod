@@ -36,6 +36,8 @@
 #include "ui/controlpanel.h"
 
 #include <windows.h>
+#include <shlobj.h>
+#include <knownfolders.h>
 #include <chrono>
 #include <thread>
 #include <string>
@@ -117,6 +119,17 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     obs.configure(L"127.0.0.1", 4455, "");
     LogWatcher                log_watch;
     plugins::MmrReveal        mmr;
+    {
+        PWSTR appdata = nullptr;
+        if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0,
+                                           nullptr, &appdata))) {
+            std::wstring bd = std::wstring(appdata) + L"\\bonezmod\\ranks";
+            CreateDirectoryW((std::wstring(appdata) + L"\\bonezmod").c_str(), nullptr);
+            CreateDirectoryW(bd.c_str(), nullptr);
+            mmr.set_badge_dir(bd);
+            CoTaskMemFree(appdata);
+        }
+    }
     mmr.attach(log_watch);
     std::atomic<bool> reveal_on { true };
     std::atomic<bool> trail_on { true };
