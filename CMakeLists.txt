@@ -63,6 +63,8 @@ add_executable(bonezmod WIN32
     src/input/macro.cpp
     src/replay/replay_parser.cpp
     src/api/tracker_api.cpp
+    src/api/log_watcher.cpp
+    src/plugins/mmr_reveal.cpp
     src/plugins/freeplay_reset.cpp
     src/plugins/training_pack.cpp
     src/plugins/shot_mirror.cpp

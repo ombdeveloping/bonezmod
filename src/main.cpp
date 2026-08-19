@@ -30,6 +30,8 @@
 #include "plugins/obs_replay.h"
 #include "plugins/chat.h"
 #include "plugins/camera_preset.h"
+#include "plugins/mmr_reveal.h"
+#include "api/log_watcher.h"
 #include "api/tracker_api.h"
 #include "ui/controlpanel.h"
 
@@ -60,6 +62,7 @@ enum HotkeyId : int {
     HK_SND_3      = 14,
     HK_TOG_TRAIL  = 15,
     HK_TOG_AUTOQ  = 16,
+    HK_TOG_REVEAL = 17,
 };
 
 void register_hotkeys() {
@@ -79,6 +82,7 @@ void register_hotkeys() {
     RegisterHotKey(nullptr, HK_SND_3,      MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, '3');
     RegisterHotKey(nullptr, HK_TOG_TRAIL,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F1);
     RegisterHotKey(nullptr, HK_TOG_AUTOQ,  MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F2);
+    RegisterHotKey(nullptr, HK_TOG_REVEAL, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, VK_F3);
 }
 
 std::wstring make_status(const GameProcess& gp, const EacStatus& eac,
@@ -111,6 +115,10 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     plugins::Soundboard       soundboard;
     plugins::ObsReplay        obs;
     obs.configure(L"127.0.0.1", 4455, "");
+    LogWatcher                log_watch;
+    plugins::MmrReveal        mmr;
+    mmr.attach(log_watch);
+    std::atomic<bool> reveal_on { true };
     std::atomic<bool> trail_on { true };
     std::atomic<bool> autoq_on { true };
 
@@ -135,6 +143,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     overlay.set_paint([&](Overlay::PaintCtx& c){
         paint_hud(c, hud);
         if (trail_on) ball_trail.draw(c, last_game_rect);
+        if (reveal_on) mmr.draw(c);
         // Mirror marker.
         auto mirror = plugins::mirror_ball(feats, last_game_rect);
         if (mirror.valid) {
@@ -245,6 +254,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
                     case HK_SND_3:      soundboard.play(3); break;
                     case HK_TOG_TRAIL:  trail_on = !trail_on; break;
                     case HK_TOG_AUTOQ:  autoq_on = !autoq_on; break;
+                    case HK_TOG_REVEAL: reveal_on = !reveal_on; break;
                 }
             } else if (msg.message == WM_QUIT) {
                 goto done;
@@ -276,6 +286,8 @@ done:
     UnregisterHotKey(nullptr, HK_SND_3);
     UnregisterHotKey(nullptr, HK_TOG_TRAIL);
     UnregisterHotKey(nullptr, HK_TOG_AUTOQ);
+    UnregisterHotKey(nullptr, HK_TOG_REVEAL);
+    log_watch.stop();
 
     capture.shutdown();
     overlay.shutdown();
