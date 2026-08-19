@@ -4,6 +4,7 @@
 #include <wincodec.h>
 #include <wrl/client.h>
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 namespace bonez {
@@ -15,11 +16,12 @@ namespace bonez {
 // dots along the bottom of the badge.
 class RankBadge {
 public:
-    // Optional user-supplied badge dir. Files are looked up as:
+    // One or more directories searched in order for badge PNGs:
     //   <dir>\bronze.png, silver.png, gold.png, platinum.png, diamond.png,
     //   champion.png, grand_champion.png, supersonic_legend.png
     // Missing files fall back to procedural draw.
-    void configure(const std::wstring& badge_dir) { dir_ = badge_dir; }
+    void configure(const std::wstring& badge_dir) { dirs_ = { badge_dir }; }
+    void add_dir(const std::wstring& d) { dirs_.push_back(d); }
 
     // Draws inside `dst` (typically 40x40 or so, respects aspect).
     void draw(ID2D1DeviceContext* d2d,
@@ -40,7 +42,7 @@ private:
         Microsoft::WRL::ComPtr<ID2D1Bitmap>> cache_;
     // "loaded" markers so a missing file doesn't hit the disk every frame.
     std::unordered_map<std::string, bool> tried_;
-    std::wstring dir_;
+    std::vector<std::wstring> dirs_;
 
     bool ensure_wic();
     Microsoft::WRL::ComPtr<ID2D1Bitmap>

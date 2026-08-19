@@ -46,6 +46,7 @@ public:
     void attach(LogWatcher& lw);
     // Optional: point the badge loader at a folder of PNG icons.
     void set_badge_dir(const std::wstring& dir) { badges_.configure(dir); }
+    void add_badge_dir(const std::wstring& dir) { badges_.add_dir(dir); }
     // Draw the current reveal card on the overlay.
     void draw(Overlay::PaintCtx& c);
 

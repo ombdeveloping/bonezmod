@@ -316,14 +316,18 @@ bool RankBadge::ensure_wic() {
 
 ComPtr<ID2D1Bitmap>
 RankBadge::load_png(ID2D1DeviceContext* d2d, const std::string& family) {
-    if (dir_.empty()) return {};
+    if (dirs_.empty()) return {};
     if (!ensure_wic()) return {};
-    std::wstring path = dir_ + L"\\" + to_wide(family) + L".png";
 
     ComPtr<IWICBitmapDecoder> dec;
-    if (FAILED(wic_->CreateDecoderFromFilename(path.c_str(), nullptr,
-        GENERIC_READ, WICDecodeMetadataCacheOnLoad, dec.GetAddressOf())))
-        return {};
+    for (const auto& dir : dirs_) {
+        if (dir.empty()) continue;
+        std::wstring path = dir + L"\\" + to_wide(family) + L".png";
+        if (SUCCEEDED(wic_->CreateDecoderFromFilename(path.c_str(), nullptr,
+            GENERIC_READ, WICDecodeMetadataCacheOnLoad,
+            dec.ReleaseAndGetAddressOf()))) break;
+    }
+    if (!dec) return {};
     ComPtr<IWICBitmapFrameDecode> frame;
     if (FAILED(dec->GetFrame(0, frame.GetAddressOf()))) return {};
 

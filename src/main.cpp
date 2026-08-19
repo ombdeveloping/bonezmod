@@ -111,6 +111,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     LogWatcher                log_watch;
     plugins::MmrReveal        mmr;
     {
+        // Search order: %APPDATA%\bonezmod\ranks first (user overrides),
+        // then <exe_dir>\assets\ranks (shipped defaults).
         PWSTR appdata = nullptr;
         if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0,
                                            nullptr, &appdata))) {
@@ -119,6 +121,13 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
             CreateDirectoryW(bd.c_str(), nullptr);
             mmr.set_badge_dir(bd);
             CoTaskMemFree(appdata);
+        }
+        wchar_t exe[MAX_PATH]; DWORD n = GetModuleFileNameW(nullptr, exe, MAX_PATH);
+        if (n > 0) {
+            std::wstring p(exe, n);
+            auto slash = p.find_last_of(L"\\/");
+            if (slash != std::wstring::npos)
+                mmr.add_badge_dir(p.substr(0, slash) + L"\\assets\\ranks");
         }
     }
     mmr.attach(log_watch);
